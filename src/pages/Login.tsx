@@ -16,7 +16,7 @@ import {
   IonCardContent,
   IonIcon
 } from '@ionic/react';
-import { personCircleOutline } from 'ionicons/icons';
+import { personCircleOutline, eyeOffOutline, eyeOutline } from 'ionicons/icons';
 import { useState } from 'react';
 import { useIonRouter } from '@ionic/react';
 
@@ -26,6 +26,8 @@ const Login: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [email, setEmail] = useState('');
   const [isSignupOpen, setIsSignupOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [toastMessage, setToastMessage] = useState('');
@@ -65,23 +67,26 @@ const Login: React.FC = () => {
 
   return (
     <IonPage>
-      <IonContent className="ion-padding" fullscreen>
+      <IonContent className="ion-padding login-background" fullscreen>
         <div className="login-container">
           <IonIcon icon={personCircleOutline} className="login-icon" />
-          <IonCard className="login-card rounded-card">
+          <IonCard className="login-card">
             <IonCardContent>
-              <IonItem>
+              <IonItem className="input-item">
                 <IonLabel position="stacked">Username</IonLabel>
-                <IonInput value={username} onIonChange={(e) => setUsername(e.detail.value!)} required placeholder="Enter your username" />
+                <IonInput value={username} onIonChange={(e) => setUsername(e.detail.value!)} required />
               </IonItem>
 
-              <IonItem>
+              <IonItem className="input-item">
                 <IonLabel position="stacked">Password</IonLabel>
-                <IonInput type="password" value={password} onIonChange={(e) => setPassword(e.detail.value!)} required placeholder="Enter your password" />
+                <IonInput type={showPassword ? 'text' : 'password'} value={password} onIonChange={(e) => setPassword(e.detail.value!)} required />
+                <IonButton fill="clear" slot="end" onClick={() => setShowPassword(!showPassword)}>
+                  <IonIcon icon={showPassword ? eyeOutline : eyeOffOutline} />
+                </IonButton>
               </IonItem>
 
-              <IonButton onClick={handleLogin} expand="full" shape="round">Login</IonButton>
-              <IonButton expand="full" color="secondary" shape="round" onClick={() => setIsSignupOpen(true)}>Sign Up</IonButton>
+              <IonButton onClick={handleLogin} expand="full" className="auth-button">Login</IonButton>
+              <IonButton expand="full" color="secondary" className="auth-button" onClick={() => setIsSignupOpen(true)}>Sign Up</IonButton>
             </IonCardContent>
           </IonCard>
         </div>
@@ -97,30 +102,35 @@ const Login: React.FC = () => {
           </IonHeader>
           <IonContent className="ion-padding">
             <div className="signup-container">
-              <IonIcon icon={personCircleOutline} className="signup-icon" />
-              <IonCard className="signup-card rounded-card">
+              <IonCard className="signup-card">
                 <IonCardContent>
-                  <IonItem>
+                  <IonItem className="input-item">
                     <IonLabel position="stacked">Username</IonLabel>
                     <IonInput value={username} onIonChange={(e) => setUsername(e.detail.value!)} required />
                   </IonItem>
 
-                  <IonItem>
+                  <IonItem className="input-item">
                     <IonLabel position="stacked">Email</IonLabel>
                     <IonInput type="email" value={email} onIonChange={(e) => setEmail(e.detail.value!)} required />
                   </IonItem>
 
-                  <IonItem>
+                  <IonItem className="input-item">
                     <IonLabel position="stacked">Password</IonLabel>
-                    <IonInput type="password" value={password} onIonChange={(e) => setPassword(e.detail.value!)} required />
+                    <IonInput type={showPassword ? 'text' : 'password'} value={password} onIonChange={(e) => setPassword(e.detail.value!)} required />
+                    <IonButton fill="clear" slot="end" onClick={() => setShowPassword(!showPassword)}>
+                      <IonIcon icon={showPassword ? eyeOutline : eyeOffOutline} />
+                    </IonButton>
                   </IonItem>
 
-                  <IonItem>
+                  <IonItem className="input-item">
                     <IonLabel position="stacked">Confirm Password</IonLabel>
-                    <IonInput type="password" value={confirmPassword} onIonChange={(e) => setConfirmPassword(e.detail.value!)} required />
+                    <IonInput type={showConfirmPassword ? 'text' : 'password'} value={confirmPassword} onIonChange={(e) => setConfirmPassword(e.detail.value!)} required />
+                    <IonButton fill="clear" slot="end" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                      <IonIcon icon={showConfirmPassword ? eyeOutline : eyeOffOutline} />
+                    </IonButton>
                   </IonItem>
 
-                  <IonButton expand="full" color="primary" shape="round" onClick={handleSignup}>Sign Up</IonButton>
+                  <IonButton expand="full" color="primary" className="auth-button" onClick={handleSignup}>Sign Up</IonButton>
                 </IonCardContent>
               </IonCard>
             </div>
@@ -133,7 +143,7 @@ const Login: React.FC = () => {
 
       <style>
         {`
-          .login-container, .signup-container {
+           .login-container, .signup-container {
             display: flex;
             flex-direction: column;
             align-items: center;
