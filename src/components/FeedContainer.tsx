@@ -1,8 +1,18 @@
 import { useState, useEffect } from 'react';
-import { IonApp, IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonInput, IonLabel, IonModal, IonFooter, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonAlert, IonText, IonAvatar, IonCol, IonGrid, IonRow, IonIcon, IonPopover } from '@ionic/react';
+import {
+  IonApp, IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonInput,
+  IonLabel, IonModal, IonFooter, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle,
+  IonCardTitle, IonAlert, IonText, IonAvatar, IonCol, IonGrid, IonRow, IonIcon, IonPopover
+} from '@ionic/react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../utils/supabaseClient';
-import { colorFill, pencil, trash } from 'ionicons/icons';
+import { pencil } from 'ionicons/icons';
+
+interface Reactions {
+  heart: number;
+  haha: number;
+  wow: number;
+}
 
 interface Post {
   post_id: string;
@@ -12,6 +22,7 @@ interface Post {
   post_content: string;
   post_created_at: string;
   post_updated_at: string;
+  reactions?: Reactions;
 }
 
 const FeedContainer = () => {
@@ -40,43 +51,49 @@ const FeedContainer = () => {
         }
       }
     };
+
     const fetchPosts = async () => {
       const { data, error } = await supabase.from('posts').select('*').order('post_created_at', { ascending: false });
       if (!error) setPosts(data as Post[]);
     };
+
     fetchUser();
     fetchPosts();
   }, []);
 
   const createPost = async () => {
     if (!postContent || !user || !username) return;
-  
-    // Fetch avatar URL
+
     const { data: userData, error: userError } = await supabase
       .from('users')
       .select('user_avatar_url')
       .eq('user_id', user.id)
       .single();
-  
+
     if (userError) {
       console.error('Error fetching user avatar:', userError);
       return;
     }
-  
+
     const avatarUrl = userData?.user_avatar_url || 'https://ionicframework.com/docs/img/demos/avatar.svg';
-  
-    // Insert post with avatar URL
+
     const { data, error } = await supabase
       .from('posts')
       .insert([
-        { post_content: postContent, user_id: user.id, username, avatar_url: avatarUrl }
+        {
+          post_content: postContent,
+          user_id: user.id,
+          username,
+          avatar_url: avatarUrl,
+          reactions: { heart: 0, haha: 0, wow: 0 }
+        }
       ])
       .select('*');
-  
+
     if (!error && data) {
       setPosts([data[0] as Post, ...posts]);
     }
-  
+
     setPostContent('');
   };
 
@@ -98,6 +115,7 @@ const FeedContainer = () => {
       .update({ post_content: postContent })
       .match({ post_id: editingPost.post_id })
       .select('*');
+
     if (!error && data) {
       const updatedPost = data[0] as Post;
       setPosts(posts.map(post => (post.post_id === updatedPost.post_id ? updatedPost : post)));
@@ -105,6 +123,27 @@ const FeedContainer = () => {
       setEditingPost(null);
       setIsModalOpen(false);
       setIsAlertOpen(true);
+    }
+  };
+
+  const handleReaction = async (postId: string, type: keyof Reactions) => {
+    const post = posts.find(p => p.post_id === postId);
+    if (!post) return;
+
+    const updatedReactions = {
+      ...post.reactions,
+      [type]: (post.reactions?.[type] || 0) + 1,
+    };
+
+    const { data, error } = await supabase
+      .from('posts')
+      .update({ reactions: updatedReactions })
+      .eq('post_id', postId)
+      .select('*');
+
+    if (!error && data) {
+      const updatedPost = data[0] as Post;
+      setPosts(posts.map(p => (p.post_id === postId ? updatedPost : p)));
     }
   };
 
@@ -128,7 +167,7 @@ const FeedContainer = () => {
                 <IonButton onClick={createPost}>Post</IonButton>
               </div>
             </IonCard>
-  
+
             {posts.map(post => (
               <IonCard key={post.post_id} style={{ marginTop: '2rem' }}>
                 <IonCardHeader>
@@ -158,13 +197,25 @@ const FeedContainer = () => {
                     </IonCol>
                   </IonRow>
                 </IonCardHeader>
-  
+
                 <IonCardContent>
                   <IonText style={{ color: 'white' }}>
                     <h1>{post.post_content}</h1>
                   </IonText>
+
+                  <IonRow>
+                    <IonButton fill="clear" onClick={() => handleReaction(post.post_id, 'heart')}>
+                      ❤️ {post.reactions?.heart || 0}
+                    </IonButton>
+                    <IonButton fill="clear" onClick={() => handleReaction(post.post_id, 'haha')}>
+                      😂 {post.reactions?.haha || 0}
+                    </IonButton>
+                    <IonButton fill="clear" onClick={() => handleReaction(post.post_id, 'wow')}>
+                      😮 {post.reactions?.wow || 0}
+                    </IonButton>
+                  </IonRow>
                 </IonCardContent>
-  
+
                 <IonPopover
                   isOpen={popoverState.open && popoverState.postId === post.post_id}
                   event={popoverState.event}
@@ -199,7 +250,7 @@ const FeedContainer = () => {
           <IonLabel>Loading...</IonLabel>
         )}
       </IonContent>
-  
+
       <IonModal isOpen={isModalOpen} onDidDismiss={() => setIsModalOpen(false)}>
         <IonHeader>
           <IonToolbar>
@@ -218,7 +269,7 @@ const FeedContainer = () => {
           <IonButton onClick={() => setIsModalOpen(false)}>Cancel</IonButton>
         </IonFooter>
       </IonModal>
-  
+
       <IonAlert
         isOpen={isAlertOpen}
         onDidDismiss={() => setIsAlertOpen(false)}
@@ -228,8 +279,6 @@ const FeedContainer = () => {
       />
     </>
   );
-  
-
 };
 
 export default FeedContainer;
